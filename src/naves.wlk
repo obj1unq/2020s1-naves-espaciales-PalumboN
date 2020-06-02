@@ -1,13 +1,46 @@
-class NaveDeCarga {
+// Lookup Method (aka: El método lucap)
+// Esto es lo que relaciona un envío de mensaje con el método real a ejecutarse
+// 1. En un object, es fácil, está en el object.
+// 2. Si es instancia de una clase, entonces ir a buscar el método a dicha clase.
+// 3. Con herencia: Si no se encuentra un método que matchee con el mensaje, entonces buscar en la superclase
+// - Repetir hasta llegar a Object.
+// - Si no lo encuentra -> MessageNotUnderstandException
 
-	var velocidad = 0
+
+// Esta clase sirve para meter comportamiento común de todas las naves.
+// No está pensada para crear instancias a partir de ella.
+class Nave {
+	var property velocidad = 0
+	
+	method acelerar(_velocidad) {
+		velocidad = (velocidad + _velocidad).min(300000)
+	}
+	
+	method propulsar() {
+		self.acelerar(20000)
+	}
+	
+	method prepararParaViajar() {
+		self.acelerar(15000)
+	}
+	
+	method encontrarEnemigo() {
+		self.recibirAmenaza()
+		self.propulsar()
+	}
+	
+	method recibirAmenaza() // Método abstracto -> No tiene cuerpo
+}
+
+class NaveDeCarga inherits Nave {
+
 	var property carga = 0
 
 	method sobrecargada() = carga > 100000
 
 	method excedidaDeVelocidad() = velocidad > 100000
 
-	method recibirAmenaza() {
+	override method recibirAmenaza() {
 		carga = 0
 	}
 	
@@ -18,12 +51,23 @@ class NaveDeCarga {
 			self.recibirAmenaza()
 		}
 	}
-
 }
 
-class NaveDePasajeros {
+class NaveDeResiduosRadioactivos inherits NaveDeCarga {
+	var property selladoAlVacio = false
+	
+	override method recibirAmenaza() {
+		velocidad = 0
+	}
+	
+	override method prepararParaViajar() {
+		super()
+		selladoAlVacio = true
+	}
+}
 
-	var velocidad = 0
+class NaveDePasajeros inherits Nave {
+	
 	var property alarma = false
 	const cantidadDePasajeros = 0
 
@@ -33,14 +77,15 @@ class NaveDePasajeros {
 
 	method estaEnPeligro() = velocidad > self.velocidadMaximaLegal() or alarma
 
-	method recibirAmenaza() {
+	override method recibirAmenaza() {
 		alarma = true
 	}
 
 }
 
-class NaveDeCombate {
-	var property velocidad = 0
+// Herencia para heredar comportamiento y definir los pripios
+class NaveDeCombate inherits Nave {
+	// Composición (hay varios objetos involucrados)
 	var property modo = reposo
 	const property mensajesEmitidos = []
 
@@ -52,10 +97,14 @@ class NaveDeCombate {
 
 	method estaInvisible() = velocidad < 10000 and modo.invisible()
 
-	method recibirAmenaza() {
+	override method recibirAmenaza() {
 		modo.recibirAmenaza(self)
 	}
-
+	
+	override method prepararParaViajar() {
+		super()
+		modo.sePreparaParaViajar(self)
+	}
 }
 
 object reposo {
@@ -64,6 +113,11 @@ object reposo {
 
 	method recibirAmenaza(nave) {
 		nave.emitirMensaje("¡RETIRADA!")
+	}
+	
+	method sePreparaParaViajar(nave) {
+		nave.emitirMensaje("Saliendo en misión")
+		nave.modo(ataque)
 	}
 
 }
@@ -74,6 +128,10 @@ object ataque {
 
 	method recibirAmenaza(nave) {
 		nave.emitirMensaje("Enemigo encontrado")
+	}
+	
+	method sePreparaParaViajar(nave) {
+		nave.emitirMensaje("Volviendo a la base")
 	}
 
 }
